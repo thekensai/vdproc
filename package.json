@@ -1,0 +1,19 @@
+{
+  "name": "vdproc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "rename.js",
+  "dependencies": {
+    "google-auth-library": "^0.9.9",
+    "googleapis": "^14.1.0",
+    "node-uuid": "^1.4.7",
+    "readline-sync": "^1.4.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
