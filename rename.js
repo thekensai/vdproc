@@ -2,7 +2,10 @@
 var readlineSync = require('readline-sync');
 var fs = require('fs');
 var uuid = require('node-uuid');
-var dir = 'd:/';
+var dir = process.argv[2] || 'd:/';
+
+if (dir.slice(-1) != '/' && dir.slice(-1) != '\\') 
+	dir += '\\';
 
 var reg_time = /^(.+)(\(.+\))\.\w{3,4}$/i;
 var reg_part = /^(.+)(_part\d+)\.\w{3,4}$/i;
