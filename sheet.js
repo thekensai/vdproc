@@ -1,4 +1,4 @@
-
+var readlineSync = require('readline-sync');
 var google = require('googleapis');
 var fs = require('fs');
 var TOKEN_PATH;
@@ -114,32 +114,94 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-function append(data) {
+function getAccounts(auth) {
+	
+	return new Promise((resolve, reject) => {
+		
+		var sheets = google.sheets('v4');
+		sheets.spreadsheets.values.get({
+			auth: auth,
+			spreadsheetId: '1tZB3Q29OMZnq4jDGjxOuDMI8hVYf15iOEq5m_uqw8E0',
+			"range": "baidu!A1:1",
+			majorDimension:"ROWS"
+			}, 
+			
+			function(err, response) {
+				if (err) {
+				  console.log('Failed to read accounts: ' + err);
+				  reject(err);
+				  return;
+				}
 
-   return function(auth) {
-  var sheets = google.sheets('v4');
-  sheets.spreadsheets.values.append({
-    auth: auth,
-    spreadsheetId: '1tZB3Q29OMZnq4jDGjxOuDMI8hVYf15iOEq5m_uqw8E0',
-    "range": "baidu!H1:J",
-    valueInputOption: 'USER_ENTERED',
-    resource:{
-        majorDimension: "ROWS",
-        "values": data
-    }
-  }, function(err, response) {
-    if (err) {
-      console.log('Failed to update: ' + err);
-      return;
-    }
+				resolve(response.values[0].map((v, x) => {return {val: v, idx: x}}).filter(e => /.+@.+\.com/.test(e.val)));
+		  });
+	});
+}
 
-    var updates = response.updates;
-    console.log('range ' + updates.updatedRange + ', ' 
-	+  updates.updatedRows + ' rows x ' + updates.updatedColumns + ' columns' );
-    console.log(data);
-    process.exit();
-  });
+function columnToLetter(column)
+{
+  var temp, letter = '';
+  while (column > 0)
+  {
+    temp = (column - 1) % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    column = (column - temp - 1) / 26;
   }
+  return letter;
+}
+
+function letterToColumn(letter)
+{
+  var column = 0, length = letter.length;
+  for (var i = 0; i < length; i++)
+  {
+    column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+  }
+  return column;
+}
+
+function append(data) {
+	return async function(auth) {
+		
+		var accounts = await getAccounts(auth);
+			
+		index = readlineSync.keyInSelect(accounts.map(e => e.val), 'Which account?');
+		
+		if (index < 0) {
+			console.log('Saving cancelled');
+			process.exit();
+		}
+		
+		console.log('saving under ' + accounts[index].val + ' ...');
+		
+		var range = "baidu!" + columnToLetter(accounts[index].idx + 1)+ "1:" + columnToLetter(accounts[index].idx + 2);
+		//console.log('saving under ' + range + ' ...');
+		//return;
+		var sheets = google.sheets('v4');
+			sheets.spreadsheets.values.append({
+			auth: auth,
+			spreadsheetId: '1tZB3Q29OMZnq4jDGjxOuDMI8hVYf15iOEq5m_uqw8E0',
+			"range": range,
+			valueInputOption: 'USER_ENTERED',
+			resource:{
+				majorDimension: "ROWS",
+				"values": data
+			}
+		  }, 
+		  function(err, response) {
+			if (err) {
+			  console.log('Failed to update: ' + err);
+			  return;
+			}
+
+			var updates = response.updates;
+			console.log('range ' + updates.updatedRange + ', ' 
+			+  updates.updatedRows + ' rows x ' + updates.updatedColumns + ' columns' );
+			console.log(data);
+			process.exit();
+		  }
+		);
+	};
 }
 
 

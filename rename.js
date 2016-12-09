@@ -1,3 +1,6 @@
+if (!~process.execArgv.indexOf('--harmony')) {
+    throw 'run with --harmony flag';
+}
 
 var readlineSync = require('readline-sync');
 var fs = require('fs');
@@ -79,10 +82,11 @@ function zip(idx) {
     if (idx >= dict_name_uid.length)
     {
 
-	 var updateData = dict_name_uid.map((d) => {return [d.file, d.uid + d.part + '.7z'];})
-	var sheet = require('./sheet');
+		var updateData = dict_name_uid.map((d) => {return [d.file, d.uid + d.part + '.7z'];})	
+		var sheet = require('./sheet');
 
-	sheet.updateSheet(updateData);
+		sheet.updateSheet(updateData);
+		
         return;
     }
 
