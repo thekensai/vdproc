@@ -6,6 +6,7 @@ var readlineSync = require('readline-sync');
 var fs = require('fs');
 var uuid = require('node-uuid');
 var dir = process.argv[2] || 'd:/';
+var destDir = process.argv[3] || dir;
 
 if (dir.slice(-1) != '/' && dir.slice(-1) != '\\') 
 	dir += '\\';
@@ -82,9 +83,17 @@ function zip(idx) {
     if (idx >= dict_name_uid.length)
     {
 
-		var updateData = dict_name_uid.map((d) => {return [d.file, d.uid + d.part + '.7z'];})	
-		var sheet = require('./sheet');
+		dict_name_uid.forEach(elem => {
+			if (elem.failed) {
+				dict_name_uid.forEach(el => {
+				    if (el.name === elem.name) el.failed = 1;
+				});
+			}
+		});
 
+		var updateData = dict_name_uid.filter(elem => !elem.failed).map((d) => {return [d.file, d.uid + d.part + '.7z'];})	
+		var sheet = require('./sheet');
+//console.log(JSON.stringify(dict_name_uid, null, 2), updateData);
 		sheet.updateSheet(updateData);
 		
         return;
@@ -92,8 +101,14 @@ function zip(idx) {
 
     var d = dict_name_uid[idx];
 
+	if (d.failed) {
+		console.log('skipping ' + d.name + ' ' + d.part);
+		zip(idx+1);
+		return;
+	}
+
     var spawn = require('child_process').spawn;
-    var proc = spawn('7za',  ['a', dir + d.uid + d.part + '.7z', 
+    var proc = spawn('7za',  ['a', destDir + d.uid + d.part + '.7z', 
     '-p' + d.uid,  '-mhe', '-mx0', dir + d.file]);
 
     proc.stdout.setEncoding('utf8');
@@ -105,7 +120,23 @@ function zip(idx) {
 
     proc.on('close', function (code) {
         console.log('process exit code ' + code);
+    	if (code) {
+    		d.failed = 1;
 
+    		dict_name_uid.forEach(elem => {
+    			if (elem.name === d.name) {
+    				elem.failed = 1;
+
+    				var path = destDir + elem.uid + elem.part + '.7z';
+    				if (fs.existsSync(path)) {				
+    					fs.unlinkSync(path);
+    					console.log('deleting ' + elem.name + ' ' + elem.part);
+    				}
+    	
+    			}
+    		});
+
+    	}
         zip(idx+1);
     });
 }
