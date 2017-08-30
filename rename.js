@@ -11,6 +11,9 @@ var destDir = process.argv[3] || dir;
 if (dir.slice(-1) != '/' && dir.slice(-1) != '\\') 
 	dir += '\\';
 
+if (destDir.slice(-1) != '/' && destDir.slice(-1) != '\\') 
+    destDir += '\\';
+
 var reg_time = /^(.+)(\(.+\))\.\w{3,4}$/i;
 var reg_part = /^(.+)(_part\d+)\.\w{3,4}$/i;
 
@@ -76,6 +79,15 @@ for(var i=0;i<files.length;i++){
     }
 }
 
+function getFileSize(filePath) {
+  var stats = fs.statSync(filePath);
+  // console.log('stats', stats);
+  var size = stats["size"];
+  // convert it to humanly readable format.
+  var i = Math.floor( Math.log(size) / Math.log(1024) );
+  return ( size / Math.pow(1024, i) ).toFixed(2) * 1 + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][i];
+}
+
 zip(0);
 
 function zip(idx) {
@@ -91,7 +103,9 @@ function zip(idx) {
 			}
 		});
 
-		var updateData = dict_name_uid.filter(elem => !elem.failed).map((d) => {return [d.file, d.uid + d.part + '.7z'];})	
+		var updateData = dict_name_uid.filter(elem => !elem.failed)
+            .map((d) => {var path = d.uid + d.part + '.7z';return [d.file, path, getFileSize(destDir + path)];})	
+
 		var sheet = require('./sheet');
 //console.log(JSON.stringify(dict_name_uid, null, 2), updateData);
 		sheet.updateSheet(updateData);
