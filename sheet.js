@@ -160,6 +160,14 @@ function letterToColumn(letter)
   return column;
 }
 
+function lastValue(column) {
+  var lastRow = SpreadsheetApp.getActiveSheet().getMaxRows();
+  var values = SpreadsheetApp.getActiveSheet().getRange(column + "1:" + column + lastRow).getValues();
+
+  for (; values[lastRow - 1] == "" && lastRow > 0; lastRow--) {}
+  return values[lastRow - 1];
+}
+
 function append(data) {
 	return async function(auth) {
 		
@@ -172,10 +180,8 @@ function append(data) {
 			process.exit();
 		}
 		
-		console.log('saving under ' + accounts[index].val + ' ...');
-		
-		var range = "baidu!" + columnToLetter(accounts[index].idx + 1)+ "1:" + columnToLetter(accounts[index].idx + 2);
-		//console.log('saving under ' + range + ' ...');
+		var range = "baidu!" + columnToLetter(accounts[index].idx + 1)+ "1:" + columnToLetter(accounts[index].idx + 3);
+		console.log('saving under ' + accounts[index].val + ' ' + range + ' ...');
 		//return;
 		var sheets = google.sheets('v4');
 			sheets.spreadsheets.values.append({
